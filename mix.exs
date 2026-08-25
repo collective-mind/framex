@@ -4,7 +4,7 @@ defmodule Framex.MixProject do
   def project do
     [
       app: :framex,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.18",
       description: "Lazy, read-only queries over a FrameNet JSON artifact",
       package: package(),
