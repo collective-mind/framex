@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Framex.Corpus.Fetch do
          [] <- invalid,
          {:ok, mode} <- fetch_mode(switches),
          {:ok, source} <- fetch_with_tools(mode) do
-      Mix.shell().info("Fetched corpus to #{source}")
+      report_opened_corpus(source)
     else
       {:error, :tools_required} -> Mix.raise(tools_required_message())
       _reason -> Mix.raise(usage())
@@ -65,15 +65,48 @@ defmodule Mix.Tasks.Framex.Corpus.Fetch do
 
   defp resolve_profile_name(name) do
     case apply(FramexTools, :profile_by_name, [name]) do
-      {:ok, profile_name} -> {:ok, profile_name}
+      {:ok, _profile} -> {:ok, String.to_existing_atom(name)}
       :error -> {:error, :unknown_corpus_profile}
     end
   end
 
   defp call_tools(fetcher) do
     case Code.ensure_loaded(FramexTools.Fetch) do
-      {:module, _module} -> fetcher.()
+      {:module, _module} -> run_with_progress(fetcher)
       {:error, _reason} -> {:error, :tools_required}
+    end
+  end
+
+  defp run_with_progress(fetcher) do
+    Mix.shell().info("Downloading corpus")
+    progress = spawn(fn -> progress_loop(0) end)
+    result = fetcher.()
+    send(progress, :done)
+    result
+  end
+
+  defp progress_loop(index) do
+    frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    frame = Enum.at(frames, rem(index, length(frames)))
+
+    receive do
+      :done -> IO.puts("\rCorpus downloaded.                 ")
+    after
+      120 ->
+        IO.write("\rDownloading corpus #{frame}")
+        progress_loop(index + 1)
+    end
+  end
+
+  defp report_opened_corpus(source) do
+    Mix.shell().info("Extracting files into priv/corpora")
+
+    with {:ok, _corpus} <- Framex.open(source) do
+      Mix.shell().info("Corpus ready")
+      Mix.shell().info("Path: #{source}")
+      {:ok, source}
+    else
+      {:error, reason} -> {:error, {:corpus_open_failed, reason}}
     end
   end
 
@@ -82,6 +115,7 @@ defmodule Mix.Tasks.Framex.Corpus.Fetch do
       case argument do
         "--corpus_profile" -> "--corpus-profile"
         "--corpus_full" -> "--corpus-full"
+        "--full" -> "--corpus-full"
         other_argument -> other_argument
       end
     end)
@@ -92,6 +126,6 @@ defmodule Mix.Tasks.Framex.Corpus.Fetch do
   end
 
   defp usage do
-    "usage: mix framex.corpus.fetch [--corpus_profile NAME | --corpus_full]"
+    "usage: mix framex.corpus.fetch [--corpus_profile NAME | --corpus_full | --full]"
   end
 end
