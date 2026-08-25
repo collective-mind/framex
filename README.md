@@ -70,7 +70,7 @@ only when `Framex.Annotation.exemplars/2` requests a lexical unit.
 
 ```elixir
 def deps do
-  [{:framex, "~> 0.1"}]
+  [{:framex, "~> 0.1.2"}]
 end
 ```
 
@@ -100,6 +100,35 @@ an intermediate assignment value.
 
 The complete corpus is deliberately not embedded in the Hex package. Use an
 external artifact path for the full FrameNet dataset.
+
+### Fetch a profile or the full corpus
+
+The package includes a small `demo_en_17` corpus, so the examples above work
+immediately after installing `framex`. For downloaded data, add
+`framex_tools` and run the Framex Mix task:
+
+```bash
+mix framex.corpus.fetch --corpus_profile demo_en_17
+```
+
+This downloads the focused profile artifact and extracts it into the consumer
+project's `priv/corpora` directory. To download the complete FrameNet release,
+use either equivalent full-corpus spelling:
+
+```bash
+mix framex.corpus.fetch --full
+mix framex.corpus.fetch --corpus_full
+```
+
+After either command, open the extracted corpus with:
+
+```elixir
+{:ok, corpus} = Framex.open("priv/corpora/framenet-1.7-streamed")
+```
+
+For a GitHub development checkout of both repositories, the top-level
+`framex` dependency should use `override: true` because `framex_tools` also
+declares `framex` as a dependency.
 
 ## Three FrameNet-style investigations
 
