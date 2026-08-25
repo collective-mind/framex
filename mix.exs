@@ -43,6 +43,7 @@ defmodule Framex.MixProject do
       files: [
         ".formatter.exs",
         "LICENSE",
+        "CHANGELOG.md",
         "README.md",
         "TERMINOLOGY.md",
         "lib",
